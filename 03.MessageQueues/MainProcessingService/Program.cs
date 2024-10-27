@@ -41,21 +41,26 @@ namespace MainProcessingService
                     File.Copy(filePath, destinationPath);
                     Console.WriteLine($"Processed and saved: {destinationPath}");
 
-                    // Optionally, move the file to an archive folder after processing
-                    string archiveDirectory = Path.Combine(Path.GetDirectoryName(filePath),"ArchivedImages");
+                    // Move the file to an archive folder after processing
+                    string archiveDirectory = Path.Combine(Path.GetDirectoryName(filePath), "ArchivedImages");
                     Directory.CreateDirectory(archiveDirectory);
                     string archivedPath = Path.Combine(archiveDirectory, Path.GetFileName(filePath));
                     File.Move(filePath, archivedPath);
                     Console.WriteLine($"Moved original file to archive: {archivedPath}");
+
+                    // Manually acknowledge the message
+                    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Failed to process the file: {ex.Message}");
+                    // Optionally, you can reject the message to send it to a dead-letter queue
+                    channel.BasicNack(deliveryTag: ea.DeliveryTag, multiple: false, requeue: false);
                 }
             };
 
             channel.BasicConsume(queue: "image_processing_queue",
-                                 autoAck: true,
+                                 autoAck: false, // Set to false for manual acknowledgment
                                  consumer: consumer);
 
             Console.ReadLine();
