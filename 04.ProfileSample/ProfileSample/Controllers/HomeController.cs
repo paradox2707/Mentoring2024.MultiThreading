@@ -13,26 +13,20 @@ namespace ProfileSample.Controllers
     {
         public ActionResult Index()
         {
-            var context = new ProfileSampleEntities();
-
-            var sources = context.ImgSources.Take(20).Select(x => x.Id);
-            
-            var model = new List<ImageModel>();
-
-            foreach (var id in sources)
+            using (var context = new ProfileSampleEntities())
             {
-                var item = context.ImgSources.Find(id);
+                // Retrieve the first 20 ImgSources with their data in one query
+                var sources = context.ImgSources
+                    .Take(20)
+                    .Select(x => new ImageModel
+                    {
+                        Name = x.Name,
+                        Data = x.Data
+                    })
+                    .ToList(); // Execute the query and convert to a list
 
-                var obj = new ImageModel()
-                {
-                    Name = item.Name,
-                    Data = item.Data
-                };
-
-                model.Add(obj);
-            } 
-
-            return View(model);
+                return View(sources);
+            }
         }
 
         public ActionResult Convert()
