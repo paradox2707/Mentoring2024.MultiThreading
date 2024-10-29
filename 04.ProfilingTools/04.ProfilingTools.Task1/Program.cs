@@ -8,8 +8,7 @@ namespace _04.ProfilingTools.Task1
         {
             Console.WriteLine("Enter password for hashing");
             var passwordText = Console.ReadLine() ?? string.Empty;
-            //var passHash = GeneratePasswordHashUsingSalt(passwordText, GenerateSalt());
-            var passHash = GeneratePasswordHashUsingSalt_Optimized(passwordText, GenerateSalt());
+            var passHash = GeneratePasswordHashUsingSalt(passwordText, GenerateSalt());
             Console.WriteLine($"Password hash is {passHash}");
             Console.ReadKey();
         }
@@ -17,25 +16,8 @@ namespace _04.ProfilingTools.Task1
         public static string GeneratePasswordHashUsingSalt(string passwordText, byte[] salt)
         {
 
-            var iterate = 10000;
-            var pbkdf2 = new Rfc2898DeriveBytes(passwordText, salt, iterate);
-            byte[] hash = pbkdf2.GetBytes(20);
-
-            byte[] hashBytes = new byte[36];
-            Array.Copy(salt, 0, hashBytes, 0, 16);
-            Array.Copy(hash, 0, hashBytes, 16, 20);
-
-            var passwordHash = Convert.ToBase64String(hashBytes);
-
-            return passwordHash;
-
-        }
-
-        public static string GeneratePasswordHashUsingSalt_Optimized(string passwordText, byte[] salt)
-        {
-
-            const int iterate = 10000; // Number of iterations
-            const int hashSize = 20; // Size of the hash in bytes
+            const int iterate = 10000;
+            const int hashSize = 20;
             const int totalSize = 36; // Total size of the resulting byte array (16 bytes salt + 20 bytes hash)
 
             using (var pbkdf2 = new Rfc2898DeriveBytes(passwordText, salt, iterate))
@@ -44,8 +26,8 @@ namespace _04.ProfilingTools.Task1
                 byte[] hashBytes = new byte[totalSize];
 
                 // Copy salt and hash into the result array
-                Buffer.BlockCopy(salt, 0, hashBytes, 0, salt.Length); // Copy salt
-                Buffer.BlockCopy(hash, 0, hashBytes, salt.Length, hash.Length); // Copy hash
+                Buffer.BlockCopy(salt, 0, hashBytes, 0, salt.Length); 
+                Buffer.BlockCopy(hash, 0, hashBytes, salt.Length, hash.Length); 
 
                 return Convert.ToBase64String(hashBytes);
             }
