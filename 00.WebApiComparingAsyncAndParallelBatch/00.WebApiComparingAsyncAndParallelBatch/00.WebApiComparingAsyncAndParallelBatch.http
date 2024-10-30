@@ -1,0 +1,6 @@
+@_00.WebApiComparingAsyncAndParallelBatch_HostAddress = http://localhost:5240
+
+GET {{_00.WebApiComparingAsyncAndParallelBatch_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
