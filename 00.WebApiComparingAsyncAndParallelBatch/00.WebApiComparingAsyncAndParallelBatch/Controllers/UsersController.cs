@@ -1,6 +1,8 @@
 using EFCore.BulkExtensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Diagnostics;
 
 namespace WebApiComparingAsyncAndParallelBatch.Controllers
@@ -62,6 +64,9 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
 
                 var bulkInsertTime = await AddUsersBulkInsertAsync(usersBulk);
                 results.Add($"bulkInsertTime for EF Core - Bulk insert, for {userCount} users: {bulkInsertTime} ms");
+
+                var nativeBulkInsertTime = await AddUsersNativeBulkInsertAsync(usersBulk);
+                results.Add($"nativeBulkInsertTime for ADO.NET - Bulk insert, for {userCount} users: {nativeBulkInsertTime} ms");
 
                 foreach (var batchSize in batchSizes)
                 {
@@ -155,6 +160,49 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
 
             stopwatch.Stop();
             return stopwatch.ElapsedMilliseconds;
+        }
+
+        private async Task<long> AddUsersNativeBulkInsertAsync(List<User> users)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var dataTable = ConvertToDataTable(users);
+
+            using (var connection = new SqlConnection(_context.Database.GetConnectionString()))
+            {
+                await connection.OpenAsync();
+
+                using (var bulkCopy = new SqlBulkCopy(connection))
+                {
+                    bulkCopy.DestinationTableName = "Users";
+
+                    // Map columns
+                    bulkCopy.ColumnMappings.Add("Id", "Id");
+                    bulkCopy.ColumnMappings.Add("Name", "Name");
+
+                    await bulkCopy.WriteToServerAsync(dataTable);
+                }
+            }
+
+            stopwatch.Stop();
+            return stopwatch.ElapsedMilliseconds;
+        }
+
+        private DataTable ConvertToDataTable(List<User> users)
+        {
+            var dataTable = new DataTable();
+            dataTable.Columns.Add("Id", typeof(int));
+            dataTable.Columns.Add("Name", typeof(string));
+
+            foreach (var user in users)
+            {
+                var row = dataTable.NewRow();
+                row["Id"] = user.Id;
+                row["Name"] = user.Name;
+                dataTable.Rows.Add(row);
+            }
+
+            return dataTable;
         }
     }
 }
