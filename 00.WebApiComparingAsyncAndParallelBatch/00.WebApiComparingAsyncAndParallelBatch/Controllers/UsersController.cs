@@ -1,3 +1,4 @@
+using EFCore.BulkExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -53,6 +54,15 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
 
             foreach (var userCount in userCounts)
             {
+                var usersBulk = new List<User>();
+                for (int i = 0; i < userCount; i++)
+                {
+                    usersBulk.Add(new User { Name = $"User_{i}_Bulk" });
+                }
+
+                var bulkInsertTime = await AddUsersBulkInsertAsync(usersBulk);
+                results.Add($"bulkInsertTime for EF Core - Bulk insert, for {userCount} users: {bulkInsertTime} ms");
+
                 foreach (var batchSize in batchSizes)
                 {
                     if (batchSize > userCount) continue; // Skip if batch size is greater than user count
@@ -80,8 +90,8 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
         {
             var stopwatch = Stopwatch.StartNew();
 
-            int maxPoolSize = 100; // This should match the Max Pool Size in your connection string
-            int maxConcurrentTasks = maxPoolSize / 10; // Adjust based on your observations
+            int maxPoolSize = 1000; // This should match the Max Pool Size in your connection string
+            int maxConcurrentTasks = maxPoolSize / 2; // Adjust based on your observations
             var semaphore = new SemaphoreSlim(maxConcurrentTasks);
             var tasks = new List<Task>();
 
@@ -116,7 +126,12 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
         {
             var stopwatch = Stopwatch.StartNew();
 
-            await Parallel.ForEachAsync(users.Chunk(batchSize), async (batch, cancellationToken) =>
+            var options = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount * 2 // Adjust based on your observations
+            };
+
+            await Parallel.ForEachAsync(users.Chunk(batchSize), options, async (batch, cancellationToken) =>
             {
                 using (var dbContext = _contextFactory.CreateDbContext())
                 {
@@ -124,6 +139,19 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
                     await dbContext.SaveChangesAsync(cancellationToken);
                 }
             });
+
+            stopwatch.Stop();
+            return stopwatch.ElapsedMilliseconds;
+        }
+
+        private async Task<long> AddUsersBulkInsertAsync(List<User> users)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            using (var dbContext = _contextFactory.CreateDbContext())
+            {
+                await dbContext.BulkInsertAsync(users);
+            }
 
             stopwatch.Stop();
             return stopwatch.ElapsedMilliseconds;
