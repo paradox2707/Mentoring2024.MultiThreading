@@ -45,20 +45,35 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
         }
 
         [HttpPost("batch")]
-        public async Task<IActionResult> AddUsersBatch([FromQuery] int batchSize = 100)
+        public async Task<IActionResult> AddUsersBatch()
         {
-            var usersAsync = new List<User>();
-            var usersParallel = new List<User>();
-            for (int i = 0; i < 100000; i++)
+            var userCounts = new[] { 100, 1000, 10000, 100000 };
+            var batchSizes = new[] { 100, 1000, 10000, 100000 };
+            var results = new List<string>();
+
+            foreach (var userCount in userCounts)
             {
-                usersAsync.Add(new User { Name = $"User_{i}_Async" });
-                usersParallel.Add(new User { Name = $"User_{i}_Parallel" });
+                foreach (var batchSize in batchSizes)
+                {
+                    if (batchSize > userCount) continue; // Skip if batch size is greater than user count
+
+                    var usersAsync = new List<User>();
+                    var usersParallel = new List<User>();
+                    for (int i = 0; i < userCount; i++)
+                    {
+                        usersAsync.Add(new User { Name = $"User_{i}_Async" });
+                        usersParallel.Add(new User { Name = $"User_{i}_Parallel" });
+                    }
+
+                    var asyncTime = await AddUsersAsync(usersAsync, batchSize);
+                    var parallelTime = await AddUsersParallel(usersParallel, batchSize);
+
+                    results.Add($"asyncTime for EF Core - Add range and save, for {userCount} users with batch size {batchSize}: {asyncTime} ms");
+                    results.Add($"parallelTime for EF Core - Add range and save, for {userCount} users with batch size {batchSize}: {parallelTime} ms");
+                }
             }
 
-            var asyncTime = await AddUsersAsync(usersAsync, batchSize);
-            var parallelTime = await AddUsersParallel(usersParallel, batchSize);
-
-            return Ok(new { asyncTime, parallelTime });
+            return Ok(string.Join("\n", results));
         }
 
         private async Task<long> AddUsersAsync(List<User> users, int batchSize)
