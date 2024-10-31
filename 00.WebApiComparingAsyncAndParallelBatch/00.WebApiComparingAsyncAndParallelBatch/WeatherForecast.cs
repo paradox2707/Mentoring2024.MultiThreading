@@ -1,4 +1,4 @@
-namespace _00.WebApiComparingAsyncAndParallelBatch
+namespace WebApiComparingAsyncAndParallelBatch
 {
     public class WeatherForecast
     {

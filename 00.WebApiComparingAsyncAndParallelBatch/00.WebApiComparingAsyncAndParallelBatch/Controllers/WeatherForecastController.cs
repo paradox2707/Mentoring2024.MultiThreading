@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace _00.WebApiComparingAsyncAndParallelBatch.Controllers
+namespace WebApiComparingAsyncAndParallelBatch.Controllers
 {
     [ApiController]
     [Route("[controller]")]
