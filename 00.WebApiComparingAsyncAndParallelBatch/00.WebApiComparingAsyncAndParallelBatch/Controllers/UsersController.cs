@@ -68,6 +68,9 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
                 var nativeBulkInsertTime = await AddUsersNativeBulkInsertAsync(usersBulk);
                 results.Add($"nativeBulkInsertTime for ADO.NET - Bulk insert, for {userCount} users: {nativeBulkInsertTime} ms");
 
+                var nativeBulkInsertParallelTime = await AddUsersNativeBulkInsertParallelAsync(usersBulk, 1000); // Adjust batch size as needed
+                results.Add($"nativeBulkInsertParallelTime for ADO.NET - Bulk insert with parallelism, for {userCount} users: {nativeBulkInsertParallelTime} ms");
+
                 foreach (var batchSize in batchSizes)
                 {
                     if (batchSize > userCount) continue; // Skip if batch size is greater than user count
@@ -203,6 +206,38 @@ namespace WebApiComparingAsyncAndParallelBatch.Controllers
             }
 
             return dataTable;
+        }
+        private async Task<long> AddUsersNativeBulkInsertParallelAsync(List<User> users, int batchSize)
+        {
+            var stopwatch = Stopwatch.StartNew();
+
+            var userChunks = users.Chunk(batchSize).ToList();
+
+            var tasks = userChunks.Select(async chunk =>
+            {
+                var dataTable = ConvertToDataTable(chunk.ToList());
+
+                using (var connection = new SqlConnection(_context.Database.GetConnectionString()))
+                {
+                    await connection.OpenAsync();
+
+                    using (var bulkCopy = new SqlBulkCopy(connection))
+                    {
+                        bulkCopy.DestinationTableName = "Users";
+
+                        // Map columns
+                        bulkCopy.ColumnMappings.Add("Id", "Id");
+                        bulkCopy.ColumnMappings.Add("Name", "Name");
+
+                        await bulkCopy.WriteToServerAsync(dataTable);
+                    }
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            stopwatch.Stop();
+            return stopwatch.ElapsedMilliseconds;
         }
     }
 }
