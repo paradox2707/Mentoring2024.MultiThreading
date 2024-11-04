@@ -7,7 +7,7 @@ namespace Expressions.Task3.E3SQueryProvider
 {
     public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
-        readonly StringBuilder _resultStringBuilder;
+        private readonly StringBuilder _resultStringBuilder;
 
         public ExpressionToFtsRequestTranslator()
         {
@@ -17,45 +17,90 @@ namespace Expressions.Task3.E3SQueryProvider
         public string Translate(Expression exp)
         {
             Visit(exp);
-
             return _resultStringBuilder.ToString();
         }
 
-        #region protected methods
+        #region Protected Methods
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Method.DeclaringType == typeof(Queryable)
-                && node.Method.Name == "Where")
+            if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == "Where")
             {
                 var predicate = node.Arguments[1];
                 Visit(predicate);
-
                 return node;
             }
-            return base.VisitMethodCall(node);
+
+            // Handle string methods
+            if (node.Method.Name == "StartsWith")
+            {
+                Visit(node.Object); // The property being checked
+                _resultStringBuilder.Append("(");
+                Visit(node.Arguments[0]); // The constant value
+                _resultStringBuilder.Append("*"); // Append wildcard for StartsWith
+                _resultStringBuilder.Append(")");
+            }
+            else if (node.Method.Name == "EndsWith")
+            {
+                Visit(node.Object); // The property being checked
+                _resultStringBuilder.Append("(");
+                _resultStringBuilder.Append("*"); // Prepend wildcard for EndsWith
+                Visit(node.Arguments[0]); // The constant value
+                _resultStringBuilder.Append(")");
+            }
+            else if (node.Method.Name == "Contains")
+            {
+                Visit(node.Object); // The property being checked
+                _resultStringBuilder.Append("(");
+                _resultStringBuilder.Append("*"); // Prepend wildcard for Contains
+                Visit(node.Arguments[0]); // The constant value
+                _resultStringBuilder.Append("*"); // Append wildcard for Contains
+                _resultStringBuilder.Append(")");
+            }
+            else if (node.Method.Name == "Equals")
+            {
+                // Handle Equals method
+                Visit(node.Object); // The property being checked
+                _resultStringBuilder.Append("(");
+                Visit(node.Arguments[0]); // The constant value
+                _resultStringBuilder.Append(")");
+            }
+            else
+            {
+                throw new NotSupportedException($"Method '{node.Method.Name}' is not supported.");
+            }
+
+            return node;
         }
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            switch (node.NodeType)
+            // Allow both operand orders for equality
+            if (node.NodeType == ExpressionType.Equal)
             {
-                case ExpressionType.Equal:
-                    if (node.Left.NodeType != ExpressionType.MemberAccess)
-                        throw new NotSupportedException($"Left operand should be property or field: {node.NodeType}");
-
-                    if (node.Right.NodeType != ExpressionType.Constant)
-                        throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
-
+                if (node.Left.NodeType == ExpressionType.MemberAccess && node.Right.NodeType == ExpressionType.Constant)
+                {
                     Visit(node.Left);
                     _resultStringBuilder.Append("(");
                     Visit(node.Right);
                     _resultStringBuilder.Append(")");
-                    break;
-
-                default:
-                    throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
-            };
+                }
+                else if (node.Left.NodeType == ExpressionType.Constant && node.Right.NodeType == ExpressionType.MemberAccess)
+                {
+                    Visit(node.Right);
+                    _resultStringBuilder.Append("(");
+                    Visit(node.Left);
+                    _resultStringBuilder.Append(")");
+                }
+                else
+                {
+                    throw new NotSupportedException($"Both operands must be a property or a constant: {node.NodeType}");
+                }
+            }
+            else
+            {
+                throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
+            }
 
             return node;
         }
@@ -63,14 +108,12 @@ namespace Expressions.Task3.E3SQueryProvider
         protected override Expression VisitMember(MemberExpression node)
         {
             _resultStringBuilder.Append(node.Member.Name).Append(":");
-
             return base.VisitMember(node);
         }
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
             _resultStringBuilder.Append(node.Value);
-
             return node;
         }
 
