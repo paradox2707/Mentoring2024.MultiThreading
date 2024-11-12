@@ -44,10 +44,10 @@ namespace ExpressionTrees.Task1.ExpressionsTransformer
             var compiledExpression = transformedExpression.Compile();
 
             // Execute the compiled expression and get the result
-            int result = compiledExpression(); // No parameter needed as x is replaced
+            int result = compiledExpression();
 
             // Output the result
-            Console.WriteLine($"Result of the expression: {result}"); // Should output 6
+            Console.WriteLine($"Result of the expression: {result}");
 
             Console.ReadLine();
         }
