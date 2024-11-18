@@ -41,14 +41,14 @@ namespace RestWeb.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItem(int id, Item item)
         {
-            if (id != item.Id)
-            {
-                return BadRequest();
-            }
+            item.Id = id;
 
             _context.Entry(item).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            var updatedItem = await _context.Items.FindAsync(id);
+
+            return Ok(updatedItem);
         }
 
         [HttpDelete("{id}")]

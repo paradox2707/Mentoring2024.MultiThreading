@@ -31,16 +31,15 @@ namespace RestWeb.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, Category category)
+        public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
         {
-            if (id != category.Id)
-            {
-                return BadRequest();
-            }
+            category.Id = id;
 
             _context.Entry(category).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            var updatedCategory = await _context.Categories.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == id);
+            return Ok(updatedCategory);
         }
 
         [HttpDelete("{id}")]
