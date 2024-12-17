@@ -1,7 +1,6 @@
-using System.Diagnostics.Metrics;
-using System.Diagnostics;
-using Xunit;
-using Task1.Task1;
+using Task1.Enums;
+using Task1.Filters;
+using Task1.Models;
 
 namespace Task1.Tests
 {
