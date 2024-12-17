@@ -1,18 +1,20 @@
-namespace Task1_4
-{
-    public class Restaurant
-    {
-        public void CookMasala(ICooker cooker, Country country)
-        {
-            IMasalaFactory factory = country switch
-            {
-                Country.India => new IndiaMasalaFactory(),
-                Country.Ukraine => new UkraineMasalaFactory(),
-                Country.England => new EnglandMasalaFactory(),
-                _ => throw new NotImplementedException("Unsupported country")
-            };
+using Task1_4.Enums;
+using Task1_4.Factories;
+using Task1_4.Interfaces;
 
-            factory.CookMasala(cooker);
-        }
+namespace Task1_4;
+
+public class Restaurant
+{
+    public void CookMasala(ICooker cooker, Country country, DateTime currentTime)
+    {
+        IRecipeFactory factory = currentTime.Month switch
+        {
+            6 or 7 or 8 => new SummerRecipeFactory(),
+            _ => new BasicRecipeFactory()
+        };
+
+        var recipe = factory.CreateRecipe(country);
+        recipe.Cook(cooker);
     }
 }

@@ -1,4 +1,4 @@
-namespace Task1_4
+namespace Task1_4.Enums
 {
     public enum Level
     {
