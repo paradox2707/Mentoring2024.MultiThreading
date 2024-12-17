@@ -1,8 +1,11 @@
-namespace Task2;
+using Task2.Interfaces;
+using Task2.Models;
 
-public class DeltaOneFeedValidator : IFeedValidator<DeltaOneFeed>
+namespace Task2.Validators;
+
+public class EmFeedValidator : IFeedValidator<EmFeed>
 {
-    public ValidateResult Validate(DeltaOneFeed feed)
+    public ValidateResult Validate(EmFeed feed)
     {
         var result = new ValidateResult();
 
@@ -16,14 +19,14 @@ public class DeltaOneFeedValidator : IFeedValidator<DeltaOneFeed>
             result.Errors.Add(ErrorCode.InvalidPrice);
         }
 
-        if (!System.Text.RegularExpressions.Regex.IsMatch(feed.Isin, @"^[A-Z]{2}\d{10}$"))
+        if (feed.Sedol <= 0 || feed.Sedol >= 100)
         {
-            result.Errors.Add(ErrorCode.InvalidIsin);
+            result.Errors.Add(ErrorCode.InvalidSedol);
         }
 
-        if (feed.MaturityDate <= feed.ValuationDate)
+        if (feed.AssetValue <= 0 || feed.AssetValue >= feed.Sedol)
         {
-            result.Errors.Add(ErrorCode.InvalidMaturityDate);
+            result.Errors.Add(ErrorCode.InvalidAssetValue);
         }
 
         result.IsValid = result.Errors.Count == 0;
