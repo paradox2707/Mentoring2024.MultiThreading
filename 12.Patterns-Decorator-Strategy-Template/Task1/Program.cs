@@ -11,13 +11,18 @@ internal class Program
         // Example usage
         ICurrencyService currencyService = new MockCurrencyService();
         ITripRepository tripRepository = new MockTripRepository();
-        ICalculatorFactory calculatorFactory = new CalculatorFactory(currencyService, tripRepository);
+        ILogger logger = new ConsoleLogger();
+        ICalculatorFactory calculatorFactory = new CalculatorFactory(currencyService, tripRepository, logger);
 
-        ICalculator calculator = calculatorFactory.CreateCachedCalculator();
-
+        // Using the LoggingCalculator
+        ICalculator loggingCalculator = calculatorFactory.CreateLoggingCalculator();
         string touristName = "John Doe";
-        decimal payment = calculator.CalculatePayment(touristName);
+        decimal loggingPayment = loggingCalculator.CalculatePayment(touristName);
+        Console.WriteLine($"Insurance payment for {touristName} with logging: {loggingPayment}");
 
-        Console.WriteLine($"Insurance payment for {touristName}: {payment}");
+        // Using the RoundingCalculator
+        ICalculator roundingCalculator = calculatorFactory.CreateRoundingCalculator();
+        decimal roundingPayment = roundingCalculator.CalculatePayment(touristName);
+        Console.WriteLine($"Insurance payment for {touristName} with rounding: {roundingPayment}");
     }
 }

@@ -6,11 +6,13 @@ public class CalculatorFactory : ICalculatorFactory
 {
     private readonly ICurrencyService _currencyService;
     private readonly ITripRepository _tripRepository;
+    private readonly ILogger _logger;
 
-    public CalculatorFactory(ICurrencyService currencyService, ITripRepository tripRepository)
+    public CalculatorFactory(ICurrencyService currencyService, ITripRepository tripRepository, ILogger logger)
     {
         _currencyService = currencyService;
         _tripRepository = tripRepository;
+        _logger = logger;
     }
 
     public ICalculator CreateCalculator()
@@ -22,5 +24,17 @@ public class CalculatorFactory : ICalculatorFactory
     {
         var basicCalculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
         return new CachedInsurancePaymentCalculator(basicCalculator);
+    }
+
+    public ICalculator CreateLoggingCalculator()
+    {
+        var basicCalculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
+        return new LoggingCalculator(basicCalculator, _logger);
+    }
+
+    public ICalculator CreateRoundingCalculator()
+    {
+        var basicCalculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
+        return new RoundingCalculator(basicCalculator);
     }
 }
