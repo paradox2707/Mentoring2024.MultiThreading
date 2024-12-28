@@ -23,7 +23,7 @@ public class CalculatorFactory : ICalculatorFactory
     public ICalculator CreateCachedCalculator()
     {
         var basicCalculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
-        return new CachedInsurancePaymentCalculator(basicCalculator);
+        return new CachedCalculator(basicCalculator);
     }
 
     public ICalculator CreateLoggingCalculator()
@@ -36,5 +36,15 @@ public class CalculatorFactory : ICalculatorFactory
     {
         var basicCalculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
         return new RoundingCalculator(basicCalculator);
+    }
+
+    public ICalculator CreateDynamicCalculator(params Func<ICalculator, ICalculator>[] decorators)
+    {
+        ICalculator calculator = new InsurancePaymentCalculator(_currencyService, _tripRepository);
+        foreach (var decorator in decorators)
+        {
+            calculator = decorator(calculator);
+        }
+        return calculator;
     }
 }

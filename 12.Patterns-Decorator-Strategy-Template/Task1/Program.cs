@@ -14,15 +14,21 @@ internal class Program
         ILogger logger = new ConsoleLogger();
         ICalculatorFactory calculatorFactory = new CalculatorFactory(currencyService, tripRepository, logger);
 
-        // Using the LoggingCalculator
-        ICalculator loggingCalculator = calculatorFactory.CreateLoggingCalculator();
+        // Using the CachedLoggingPaymentCalculator
+        ICalculator cachedLoggingCalculator = calculatorFactory.CreateDynamicCalculator(
+            calc => new CachedCalculator(calc),
+            calc => new LoggingCalculator(calc, logger)
+        );
         string touristName = "John Doe";
-        decimal loggingPayment = loggingCalculator.CalculatePayment(touristName);
-        Console.WriteLine($"Insurance payment for {touristName} with logging: {loggingPayment}");
+        decimal cachedLoggingPayment = cachedLoggingCalculator.CalculatePayment(touristName);
+        Console.WriteLine($"Insurance payment for {touristName} with caching and logging: {cachedLoggingPayment}");
 
-        // Using the RoundingCalculator
-        ICalculator roundingCalculator = calculatorFactory.CreateRoundingCalculator();
-        decimal roundingPayment = roundingCalculator.CalculatePayment(touristName);
-        Console.WriteLine($"Insurance payment for {touristName} with rounding: {roundingPayment}");
+        // Using the RoundingCachedPaymentCalculator
+        ICalculator roundingCachedCalculator = calculatorFactory.CreateDynamicCalculator(
+            calc => new CachedCalculator(calc),
+            calc => new RoundingCalculator(calc)
+        );
+        decimal roundingCachedPayment = roundingCachedCalculator.CalculatePayment(touristName);
+        Console.WriteLine($"Insurance payment for {touristName} with rounding and caching: {roundingCachedPayment}");
     }
 }
