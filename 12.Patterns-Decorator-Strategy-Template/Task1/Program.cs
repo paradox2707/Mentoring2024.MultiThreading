@@ -1,4 +1,6 @@
-﻿using Task1.Interfaces;
+﻿using Task1.Consts;
+using Task1.Interfaces;
+using Task1.Models;
 using Task1.Repos;
 using Task1.Services;
 
@@ -30,5 +32,11 @@ internal class Program
         );
         decimal roundingCachedPayment = roundingCachedCalculator.CalculatePayment(touristName);
         Console.WriteLine($"Insurance payment for {touristName} with rounding and caching: {roundingCachedPayment}");
+
+        // Example usage of ShipmentCalculator
+        var order = new Order(ShipmentOptions.FedEx, 350, ProductType.Book);
+        var shipmentCalculator = new ShipmentCalculator();
+        double shipmentPrice = shipmentCalculator.CalculatePrice(order);
+        Console.WriteLine($"Shipment price for order: {shipmentPrice}");
     }
 }
