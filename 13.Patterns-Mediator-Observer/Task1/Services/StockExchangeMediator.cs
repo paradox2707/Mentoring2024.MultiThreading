@@ -1,12 +1,17 @@
-using System;
-using System.Collections.Generic;
+using Task1.Interfaces;
 
-namespace Task1;
+namespace Task1.Services;
 
 public class StockExchangeMediator : IStockExchangeMediator
 {
     private readonly Dictionary<string, List<(string playerId, int numberOfShares)>> sellOffers = new();
     private readonly Dictionary<string, List<(string playerId, int numberOfShares)>> buyOffers = new();
+    private readonly Dictionary<string, IPlayer> players = new();
+
+    public void RegisterPlayer(IPlayer player)
+    {
+        players[player.PlayerId] = player;
+    }
 
     public bool SellOffer(string playerId, string stockName, int numberOfShares)
     {
@@ -16,6 +21,8 @@ public class StockExchangeMediator : IStockExchangeMediator
             if (offer.playerId != playerId)
             {
                 buyOffers[stockName].RemoveAt(0);
+                players[playerId].NotifySold(numberOfShares);
+                players[offer.playerId].NotifyBought(numberOfShares);
                 return true;
             }
         }
@@ -37,6 +44,8 @@ public class StockExchangeMediator : IStockExchangeMediator
             if (offer.playerId != playerId)
             {
                 sellOffers[stockName].RemoveAt(0);
+                players[playerId].NotifyBought(numberOfShares);
+                players[offer.playerId].NotifySold(numberOfShares);
                 return true;
             }
         }
@@ -50,3 +59,4 @@ public class StockExchangeMediator : IStockExchangeMediator
         return false;
     }
 }
+
