@@ -1,6 +1,0 @@
-@RestWeb_HostAddress = http://localhost:5290
-
-GET {{RestWeb_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
