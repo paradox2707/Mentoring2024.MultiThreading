@@ -26,6 +26,8 @@ namespace RestWeb
 
             var app = builder.Build();
 
+            app.UseExceptionHandlerMiddleware();
+
             // Ensure the database is created and seeded
             using (var scope = app.Services.CreateScope())
             {
