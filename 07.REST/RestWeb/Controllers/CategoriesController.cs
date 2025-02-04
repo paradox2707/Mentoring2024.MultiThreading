@@ -25,6 +25,16 @@ namespace RestWeb.Controllers
         [HttpPost]
         public async Task<ActionResult<Category>> AddCategory(Category category)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (await _context.Categories.AnyAsync(c => c.Name == category.Name))
+            {
+                return Conflict("Category with the same name already exists.");
+            }
+
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCategories), new { id = category.Id }, category);
@@ -33,7 +43,20 @@ namespace RestWeb.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
         {
-            category.Id = id;
+            if (id != category.Id)
+            {
+                return BadRequest("Category ID mismatch.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!await _context.Categories.AnyAsync(c => c.Id == id))
+            {
+                return NotFound("Category not found.");
+            }
 
             _context.Entry(category).State = EntityState.Modified;
             await _context.SaveChangesAsync();
