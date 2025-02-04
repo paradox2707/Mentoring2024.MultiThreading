@@ -28,6 +28,13 @@ namespace DataCaptureService
                 var files = Directory.GetFiles(folderPath, "*.pdf");
                 foreach (var file in files)
                 {
+                    var fileInfo = new FileInfo(file);
+                    if (fileInfo.Length > 10485760) // 10 MB limit
+                    {
+                        Console.WriteLine($"File {file} is too large to process.");
+                        continue;
+                    }
+
                     // Send file path to RabbitMQ
                     var body = System.Text.Encoding.UTF8.GetBytes(file);
                     channel.BasicPublish(exchange: "",
@@ -39,7 +46,7 @@ namespace DataCaptureService
 
                 Thread.Sleep(5000); // Check for new files every 5 seconds
             }
-        
+
         }
     }
 }
