@@ -1,6 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
 using RestWeb.Data;
+using RestWeb.Interfaces;
+using RestWeb.Services;
 using System.Text.Json.Serialization;
 
 namespace RestWeb
@@ -17,6 +19,9 @@ namespace RestWeb
                 {
                     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                 });
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IItemService, ItemService>();
+
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 

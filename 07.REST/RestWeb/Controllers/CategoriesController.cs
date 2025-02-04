@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using RestWeb.Data;
+using RestWeb.Interfaces;
 using RestWeb.Models;
 
 namespace RestWeb.Controllers
@@ -9,17 +8,18 @@ namespace RestWeb.Controllers
     [Route("api/[controller]")]
     public class CategoriesController : ControllerBase
     {
-        private readonly CatalogContext _context;
+        private readonly ICategoryService _categoryService;
 
-        public CategoriesController(CatalogContext context)
+        public CategoriesController(ICategoryService categoryService)
         {
-            _context = context;
+            _categoryService = categoryService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
         {
-            return await _context.Categories.Include(c => c.Items).ToListAsync();
+            var categories = await _categoryService.GetCategoriesAsync();
+            return Ok(categories);
         }
 
         [HttpPost]
@@ -30,52 +30,49 @@ namespace RestWeb.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (await _context.Categories.AnyAsync(c => c.Name == category.Name))
+            try
             {
-                return Conflict("Category with the same name already exists.");
+                var createdCategory = await _categoryService.AddCategoryAsync(category);
+                return CreatedAtAction(nameof(GetCategories), new { id = createdCategory.Id }, createdCategory);
             }
-
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCategories), new { id = category.Id }, category);
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<Category>> UpdateCategory(int id, Category category)
         {
-            if (id != category.Id)
-            {
-                return BadRequest("Category ID mismatch.");
-            }
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!await _context.Categories.AnyAsync(c => c.Id == id))
+            try
             {
-                return NotFound("Category not found.");
+                var updatedCategory = await _categoryService.UpdateCategoryAsync(id, category);
+                return Ok(updatedCategory);
             }
-
-            _context.Entry(category).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            var updatedCategory = await _context.Categories.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == id);
-            return Ok(updatedCategory);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
-            var category = await _context.Categories.Include(c => c.Items).FirstOrDefaultAsync(c => c.Id == id);
-            if (category == null)
+            var result = await _categoryService.DeleteCategoryAsync(id);
+            if (!result)
             {
                 return NotFound();
             }
 
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
             return NoContent();
         }
     }

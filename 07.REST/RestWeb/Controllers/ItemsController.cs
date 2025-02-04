@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestWeb.Data;
+using RestWeb.Interfaces;
 using RestWeb.Models;
 
 namespace RestWeb.Controllers
@@ -9,25 +10,18 @@ namespace RestWeb.Controllers
     [Route("api/[controller]")]
     public class ItemsController : ControllerBase
     {
-        private readonly CatalogContext _context;
+        private readonly IItemService _itemService;
 
-        public ItemsController(CatalogContext context)
+        public ItemsController(IItemService itemService)
         {
-            _context = context;
+            _itemService = itemService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Item>>> GetItems([FromQuery] int? categoryId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var query = _context.Items.AsQueryable();
-
-            if (categoryId.HasValue)
-            {
-                query = query.Where(i => i.CategoryId == categoryId);
-            }
-
-            var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            return items;
+            var items = await _itemService.GetItemsAsync(categoryId, page, pageSize);
+            return Ok(items);
         }
 
         [HttpPost]
@@ -38,52 +32,49 @@ namespace RestWeb.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (await _context.Items.AnyAsync(i => i.Name == item.Name && i.CategoryId == item.CategoryId))
+            try
             {
-                return Conflict("Item with the same name already exists in this category.");
+                var createdItem = await _itemService.AddItemAsync(item);
+                return CreatedAtAction(nameof(GetItems), new { id = createdItem.Id }, createdItem);
             }
-
-            _context.Items.Add(item);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetItems), new { id = item.Id }, item);
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateItem(int id, Item item)
         {
-            if (id != item.Id)
-            {
-                return BadRequest("Item ID mismatch.");
-            }
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (!await _context.Items.AnyAsync(i => i.Id == id))
+            try
             {
-                return NotFound("Item not found.");
+                var updatedItem = await _itemService.UpdateItemAsync(id, item);
+                return Ok(updatedItem);
             }
-
-            _context.Entry(item).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            var updatedItem = await _context.Items.Include(i => i.Category).FirstOrDefaultAsync(i => i.Id == id);
-            return Ok(updatedItem);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteItem(int id)
         {
-            var item = await _context.Items.FindAsync(id);
-            if (item == null)
+            var result = await _itemService.DeleteItemAsync(id);
+            if (!result)
             {
                 return NotFound();
             }
 
-            _context.Items.Remove(item);
-            await _context.SaveChangesAsync();
             return NoContent();
         }
     }
