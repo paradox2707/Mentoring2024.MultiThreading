@@ -21,13 +21,12 @@ public class StatisticMiddleware
     {
         string path = context.Request.Path;
 
-        await _statisticService.RegisterVisitAsync(path).ConfigureAwait(false);
+        await _statisticService.RegisterVisitAsync(path);
 
         context.Response.Headers.Add(
             CustomHttpHeaders.TotalPageVisits,
-            (await _statisticService.GetVisitsCountAsync(path).ConfigureAwait(false)).ToString());
+            (await _statisticService.GetVisitsCountAsync(path)).ToString());
 
-        await Task.Delay(3000); // without this the statistic counter does not work
         await _next(context);
     }
 }

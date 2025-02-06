@@ -30,7 +30,7 @@ internal class Program
         {
             if (int.TryParse(input, out var n))
             {
-                CalculateSum(n);
+                CalculateSumAsync(n).ConfigureAwait(false);
             }
             else
             {
@@ -42,20 +42,22 @@ internal class Program
         }
 
         _cts.Cancel(); // Cancel any ongoing task on exit
+        _cts.Dispose(); 
         Console.WriteLine("Press any key to continue");
         Console.ReadLine();
     }
 
-    private static async void CalculateSum(int n)
+    private static async Task CalculateSumAsync(int n)
     {
         _cts.Cancel();
+        _cts.Dispose(); // Dispose the previous CancellationTokenSource
         _cts = new CancellationTokenSource();
 
         Console.WriteLine($"The task for {n} started... Enter N to cancel the request:");
 
         try
         {
-            var sum = await Task.Run(() => Calculator.CalculateAsync(n, _cts.Token));
+            var sum = await Task.Run(() => Calculator.Calculate(n, _cts.Token));
             Console.WriteLine($"Sum for {n} = {sum}.");
         }
         catch (OperationCanceledException)

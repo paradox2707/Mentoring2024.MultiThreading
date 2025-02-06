@@ -5,7 +5,7 @@ namespace AsyncAwait.Task1.CancellationTokens;
 
 internal static class Calculator
 {
-    public static long CalculateAsync(int n, CancellationToken token)
+    public static long Calculate(int n, CancellationToken token)
     {
         long sum = 0;
 
