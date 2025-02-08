@@ -65,11 +65,14 @@ namespace MultiThreading.Task2.Chaining
             });
 
             // Fourth Task: Calculate the average value
-            thirdTask.ContinueWith(t =>
+            Task fourthTask = thirdTask.ContinueWith(t =>
             {
                 double avg = t.Result.Average();
                 Console.WriteLine($"Fourth Task - Average Value: {avg}");
             });
+
+            // Wait for all tasks to complete
+            Task.WaitAll(firstTask, secondTask, thirdTask, fourthTask);
         }
     }
 }
