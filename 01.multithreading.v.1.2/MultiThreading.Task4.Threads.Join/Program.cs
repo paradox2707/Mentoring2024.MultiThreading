@@ -10,6 +10,7 @@
  */
 
 using System;
+using System.Threading;
 
 namespace MultiThreading.Task4.Threads.Join
 {
@@ -17,7 +18,7 @@ namespace MultiThreading.Task4.Threads.Join
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("4.	Write a program which recursively creates 10 threads.");
+            Console.WriteLine("4. Write a program which recursively creates 10 threads.");
             Console.WriteLine("Each thread should be with the same body and receive a state with integer number, decrement it, print and pass as a state into the newly created thread.");
             Console.WriteLine("Implement all of the following options:");
             Console.WriteLine();
@@ -26,9 +27,65 @@ namespace MultiThreading.Task4.Threads.Join
 
             Console.WriteLine();
 
-            // feel free to add your code
+            // Part A
+            Console.WriteLine("Starting Part A: Thread class with Join");
+            CreateThread(10);
+
+            // Part B
+            Console.WriteLine("\nStarting Part B: ThreadPool class with Semaphore");
+            CreateThreadsWithThreadPool(10);
 
             Console.ReadLine();
+        }
+
+        // Part A: Using Thread class
+        static void CreateThread(object state)
+        {
+            int number = (int)state;
+            if (number <= 0) return;
+            Console.WriteLine($"Thread {number} started.");
+            Thread thread = new Thread(new ParameterizedThreadStart(CreateThread));
+            thread.Start(number - 1);
+            thread.Join();
+
+            Console.WriteLine($"Thread {number} finished.");
+        }
+
+        // Part B: Using ThreadPool and Semaphore
+        static void CreateThreadsWithThreadPool(int number)
+        {
+            ThreadWithState tws = new ThreadWithState(10, new Semaphore(0, 1));
+            ThreadPool.QueueUserWorkItem(tws.ThreadProc);
+            Console.ReadLine();
+        }
+    }
+
+    public class ThreadWithState
+    {
+        private int _number;
+        private Semaphore _outerSemaphore;
+        private Semaphore _innerSemaphore;
+
+        public ThreadWithState(int number, Semaphore outerSemaphore)
+        {
+            _number = number;
+            _outerSemaphore = outerSemaphore;
+            _innerSemaphore = new Semaphore(0, 1);
+        }
+
+        public void ThreadProc(object state)
+        {
+            
+            Console.WriteLine($"Thread {_number} started.");
+            if (_number > 1)
+            {
+                ThreadWithState newTws = new ThreadWithState(_number - 1, _innerSemaphore);
+                ThreadPool.QueueUserWorkItem(newTws.ThreadProc);
+                _innerSemaphore.WaitOne();
+            }
+
+            Console.WriteLine($"Thread {_number} finished.");
+            _outerSemaphore.Release();
         }
     }
 }
