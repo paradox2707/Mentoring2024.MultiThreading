@@ -54,7 +54,7 @@ namespace MultiThreading.Task4.Threads.Join
         // Part B: Using ThreadPool and Semaphore
         static void CreateThreadsWithThreadPool(int number)
         {
-            ThreadWithState tws = new ThreadWithState(10);
+            ThreadWithState tws = new ThreadWithState(10, new Semaphore(0, 1));
             ThreadPool.QueueUserWorkItem(tws.ThreadProc);
             Console.ReadLine();
         }
@@ -62,25 +62,30 @@ namespace MultiThreading.Task4.Threads.Join
 
     public class ThreadWithState
     {
-        static Semaphore semaphore = new Semaphore(1, 1);
-        private int number;
+        private int _number;
+        private Semaphore _outerSemaphore;
+        private Semaphore _innerSemaphore;
 
-        public ThreadWithState(int number)
+        public ThreadWithState(int number, Semaphore outerSemaphore)
         {
-            this.number = number;
+            _number = number;
+            _outerSemaphore = outerSemaphore;
+            _innerSemaphore = new Semaphore(0, 1);
         }
 
         public void ThreadProc(object state)
         {
-            semaphore.WaitOne();
-            Console.WriteLine($"Thread {number} started.");
-            if (number > 1)
+            
+            Console.WriteLine($"Thread {_number} started.");
+            if (_number > 1)
             {
-                ThreadWithState newTws = new ThreadWithState(number - 1);
+                ThreadWithState newTws = new ThreadWithState(_number - 1, _innerSemaphore);
                 ThreadPool.QueueUserWorkItem(newTws.ThreadProc);
+                _innerSemaphore.WaitOne();
             }
-            Console.WriteLine($"Thread {number} finished.");
-            semaphore.Release();
+
+            Console.WriteLine($"Thread {_number} finished.");
+            _outerSemaphore.Release();
         }
     }
 }
