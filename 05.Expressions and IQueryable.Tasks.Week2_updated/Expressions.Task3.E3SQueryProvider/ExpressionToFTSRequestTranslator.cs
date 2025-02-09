@@ -17,6 +17,7 @@ namespace Expressions.Task3.E3SQueryProvider
         public string Translate(Expression exp)
         {
             Visit(exp);
+
             return _resultStringBuilder.ToString();
         }
 
