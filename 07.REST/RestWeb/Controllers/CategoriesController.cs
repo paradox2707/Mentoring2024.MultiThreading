@@ -30,15 +30,8 @@ namespace RestWeb.Controllers
                 return BadRequest(ModelState);
             }
 
-            try
-            {
-                var createdCategory = await _categoryService.AddCategoryAsync(category);
-                return CreatedAtAction(nameof(GetCategories), new { id = createdCategory.Id }, createdCategory);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ex.Message);
-            }
+            var createdCategory = await _categoryService.AddCategoryAsync(category);
+            return CreatedAtAction(nameof(GetCategories), new { id = createdCategory.Id }, createdCategory);
         }
 
         [HttpPut("{id}")]
@@ -49,19 +42,8 @@ namespace RestWeb.Controllers
                 return BadRequest(ModelState);
             }
 
-            try
-            {
-                var updatedCategory = await _categoryService.UpdateCategoryAsync(id, category);
-                return Ok(updatedCategory);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            var updatedCategory = await _categoryService.UpdateCategoryAsync(id, category);
+            return Ok(updatedCategory);
         }
 
         [HttpDelete("{id}")]

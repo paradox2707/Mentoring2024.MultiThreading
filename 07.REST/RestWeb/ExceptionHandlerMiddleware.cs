@@ -34,12 +34,18 @@ public class ExceptionHandlerMiddleware
     private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        context.Response.StatusCode = exception switch
+        {
+            ArgumentException => (int)HttpStatusCode.BadRequest,
+            KeyNotFoundException => (int)HttpStatusCode.NotFound,
+            InvalidOperationException => (int)HttpStatusCode.Conflict,
+            _ => (int)HttpStatusCode.InternalServerError,
+        };
 
         return context.Response.WriteAsync(new ErrorDetails()
         {
             StatusCode = context.Response.StatusCode,
-            Message = "Internal Server Error. Please try again later."
+            Message = exception.Message
         }.ToString());
     }
 }
