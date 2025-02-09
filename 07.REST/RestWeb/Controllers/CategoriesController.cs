@@ -5,7 +5,8 @@ using RestWeb.Models;
 namespace RestWeb.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;

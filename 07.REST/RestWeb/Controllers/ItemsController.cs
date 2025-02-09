@@ -7,7 +7,8 @@ using RestWeb.Models;
 namespace RestWeb.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class ItemsController : ControllerBase
     {
         private readonly IItemService _itemService;

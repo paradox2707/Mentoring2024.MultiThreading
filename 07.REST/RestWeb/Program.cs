@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RestWeb.Data;
 using RestWeb.Interfaces;
@@ -21,6 +22,14 @@ namespace RestWeb
                 });
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IItemService, ItemService>();
+
+            // Add API versioning
+            builder.Services.AddApiVersioning(options =>
+            {
+                options.ReportApiVersions = true;
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+            });
 
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
