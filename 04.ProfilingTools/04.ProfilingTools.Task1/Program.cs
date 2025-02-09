@@ -15,23 +15,20 @@ namespace _04.ProfilingTools.Task1
 
         public static string GeneratePasswordHashUsingSalt(string passwordText, byte[] salt)
         {
+            var iterate = 100000;
+            var pbkdf2 = new Rfc2898DeriveBytes(passwordText, salt, iterate);
+            byte[] hash = pbkdf2.GetBytes(20);
 
-            const int iterate = 10000;
-            const int hashSize = 20;
-            const int totalSize = 36; // Total size of the resulting byte array (16 bytes salt + 20 bytes hash)
+            byte[] hashBytes = new byte[36];
 
-            using (var pbkdf2 = new Rfc2898DeriveBytes(passwordText, salt, iterate))
-            {
-                byte[] hash = pbkdf2.GetBytes(hashSize);
-                byte[] hashBytes = new byte[totalSize];
+            Parallel.Invoke(
+                () => Array.Copy(salt, 0, hashBytes, 0, 16),
+                () => Array.Copy(hash, 0, hashBytes, 16, 20)
+            );
 
-                // Copy salt and hash into the result array
-                Buffer.BlockCopy(salt, 0, hashBytes, 0, salt.Length); 
-                Buffer.BlockCopy(hash, 0, hashBytes, salt.Length, hash.Length); 
+            var passwordHash = Convert.ToBase64String(hashBytes);
 
-                return Convert.ToBase64String(hashBytes);
-            }
-
+            return passwordHash;
         }
 
         public static byte[] GenerateSalt(int size = 16) // Default size is 16 bytes
