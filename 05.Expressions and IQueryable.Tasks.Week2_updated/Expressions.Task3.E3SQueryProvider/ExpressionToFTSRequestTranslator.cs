@@ -7,7 +7,7 @@ namespace Expressions.Task3.E3SQueryProvider
 {
     public class ExpressionToFtsRequestTranslator : ExpressionVisitor
     {
-        private readonly StringBuilder _resultStringBuilder;
+        readonly StringBuilder _resultStringBuilder;
 
         public ExpressionToFtsRequestTranslator()
         {
@@ -20,14 +20,16 @@ namespace Expressions.Task3.E3SQueryProvider
             return _resultStringBuilder.ToString();
         }
 
-        #region Protected Methods
+        #region protected methods
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Method.DeclaringType == typeof(Queryable) && node.Method.Name == "Where")
+            if (node.Method.DeclaringType == typeof(Queryable)
+                && node.Method.Name == "Where")
             {
                 var predicate = node.Arguments[1];
                 Visit(predicate);
+
                 return node;
             }
 
@@ -117,12 +119,14 @@ namespace Expressions.Task3.E3SQueryProvider
         protected override Expression VisitMember(MemberExpression node)
         {
             _resultStringBuilder.Append(node.Member.Name).Append(":");
+
             return base.VisitMember(node);
         }
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
             _resultStringBuilder.Append(node.Value);
+
             return node;
         }
 
