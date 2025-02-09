@@ -15,7 +15,7 @@ namespace _04.ProfilingTools.Task1
 
         public static string GeneratePasswordHashUsingSalt(string passwordText, byte[] salt)
         {
-            var iterate = 100000;
+            var iterate = 10000;
             var pbkdf2 = new Rfc2898DeriveBytes(passwordText, salt, iterate);
             byte[] hash = pbkdf2.GetBytes(20);
 
