@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using ProfileSample.DAL;
@@ -11,31 +13,26 @@ namespace ProfileSample.Controllers
 {
     public class HomeController : Controller
     {
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
-            var context = new ProfileSampleEntities();
-
-            var sources = context.ImgSources.Take(20).Select(x => x.Id);
-            
-            var model = new List<ImageModel>();
-
-            foreach (var id in sources)
+            using (var context = new ProfileSampleEntities())
             {
-                var item = context.ImgSources.Find(id);
+                // Retrieve the first 20 ImgSources with their data in one query
+                var sources = await context.ImgSources
+                    .AsNoTracking()
+                    .Take(20)
+                    .Select(x => new ImageModel
+                    {
+                        Name = x.Name,
+                        Data = x.Data
+                    })
+                    .ToListAsync(); // Execute the query and convert to a list asynchronously
 
-                var obj = new ImageModel()
-                {
-                    Name = item.Name,
-                    Data = item.Data
-                };
-
-                model.Add(obj);
-            } 
-
-            return View(model);
+                return View(sources);
+            }
         }
 
-        public ActionResult Convert()
+        public async Task<ActionResult> Convert()
         {
             var files = Directory.GetFiles(Server.MapPath("~/Content/Img"), "*.jpg");
 
@@ -43,11 +40,10 @@ namespace ProfileSample.Controllers
             {
                 foreach (var file in files)
                 {
-                    using (var stream = new FileStream(file, FileMode.Open))
+                    using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true))
                     {
                         byte[] buff = new byte[stream.Length];
-
-                        stream.Read(buff, 0, (int) stream.Length);
+                        await stream.ReadAsync(buff, 0, (int)stream.Length);
 
                         var entity = new ImgSource()
                         {
@@ -56,9 +52,9 @@ namespace ProfileSample.Controllers
                         };
 
                         context.ImgSources.Add(entity);
-                        context.SaveChanges();
+                        await context.SaveChangesAsync();
                     }
-                } 
+                }
             }
 
             return RedirectToAction("Index");

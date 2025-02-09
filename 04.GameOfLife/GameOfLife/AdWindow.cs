@@ -12,11 +12,10 @@ namespace GameOfLife
         private readonly DispatcherTimer adTimer;
         private int imgNmb;     // the number of the image currently shown
         private string link;    // the URL where the currently shown ad leads to
-        
-    
+        private readonly ImageBrush myBrush; // Cached ImageBrush for performance
+
         public AdWindow(Window owner)
         {
-            Random rnd = new Random();
             Owner = owner;
             Width = 350;
             Height = 100;
@@ -26,13 +25,20 @@ namespace GameOfLife
             Cursor = Cursors.Hand;
             ShowActivated = false;
             MouseDown += OnClick;
-            
-            imgNmb = rnd.Next(1, 3);
-            ChangeAds(this, new EventArgs());
+
+            myBrush = new ImageBrush(); // Initialize the ImageBrush once
+
+            // Initialize the random number generator
+            Random rnd = new Random();
+            imgNmb = rnd.Next(1, 4); // Changed to 1-4 to match cases
+
+            ChangeAds(this, EventArgs.Empty); // Initialize the ad display
 
             // Run the timer that changes the ad's image 
-            adTimer = new DispatcherTimer();
-            adTimer.Interval = TimeSpan.FromSeconds(3);
+            adTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3)
+            };
             adTimer.Tick += ChangeAds;
             adTimer.Start();
         }
@@ -42,12 +48,12 @@ namespace GameOfLife
             System.Diagnostics.Process.Start(link);
             Close();
         }
-        
+
         protected override void OnClosed(EventArgs e)
         {
-            //Unsubscribe();
+            Unsubscribe(); // Unsubscribe from the event when the window is closed
             base.OnClosed(e);
-        } 
+        }
 
         public void Unsubscribe()
         {
@@ -56,34 +62,26 @@ namespace GameOfLife
 
         private void ChangeAds(object sender, EventArgs eventArgs)
         {
-            
-            ImageBrush myBrush = new ImageBrush();
-            
             switch (imgNmb)
             {
                 case 1:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad1.jpg", UriKind.Relative));
-                    Background = myBrush;
+                    myBrush.ImageSource = new BitmapImage(new Uri("ad1.jpg", UriKind.Relative));
                     link = "http://example.com";
-                    imgNmb++;
                     break;
                 case 2:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad2.jpg", UriKind.Relative));
-                    Background = myBrush;
+                    myBrush.ImageSource = new BitmapImage(new Uri("ad2.jpg", UriKind.Relative));
                     link = "http://example.com";
-                    imgNmb++;
                     break;
                 case 3:
-                    myBrush.ImageSource =
-                        new BitmapImage(new Uri("ad3.jpg", UriKind.Relative));
-                    Background = myBrush;
+                    myBrush.ImageSource = new BitmapImage(new Uri("ad3.jpg", UriKind.Relative));
                     link = "http://example.com";
-                    imgNmb = 1;
                     break;
             }
-            
+
+            Background = myBrush; // Set the background to the cached ImageBrush
+
+            imgNmb++;
+            if (imgNmb > 3) imgNmb = 1; // Reset to 1 after 3
         }
     }
 }
