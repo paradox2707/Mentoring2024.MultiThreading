@@ -75,7 +75,6 @@ namespace Expressions.Task3.E3SQueryProvider
 
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            // Allow both operand orders for equality
             if (node.NodeType == ExpressionType.Equal)
             {
                 if (node.Left.NodeType == ExpressionType.MemberAccess && node.Right.NodeType == ExpressionType.Constant)
@@ -96,6 +95,16 @@ namespace Expressions.Task3.E3SQueryProvider
                 {
                     throw new NotSupportedException($"Both operands must be a property or a constant: {node.NodeType}");
                 }
+            }
+            else if (node.NodeType == ExpressionType.AndAlso)
+            {
+                _resultStringBuilder.Append("{ \"statements\": [");
+                _resultStringBuilder.Append("{ \"query\":\"");
+                Visit(node.Left);
+                _resultStringBuilder.Append("\"},{ \"query\":\"");
+                Visit(node.Right);
+                _resultStringBuilder.Append("\"}");
+                _resultStringBuilder.Append("] }");
             }
             else
             {
