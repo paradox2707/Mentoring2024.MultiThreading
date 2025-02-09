@@ -14,11 +14,14 @@ public class ThreadSafeSingleton
     {
         get
         {
-            lock (_lock)
+            if (_instance == null)
             {
-                if (_instance == null)
+                lock (_lock)
                 {
-                    _instance = new ThreadSafeSingleton();
+                    if (_instance == null)
+                    {
+                        _instance = new ThreadSafeSingleton();
+                    }
                 }
             }
             return _instance;
